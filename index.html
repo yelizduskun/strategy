@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strategy Implementation Plan</title>
+<style>
+  :root {
+    --bg: #f5f2eb;
+    --surface: #fff;
+    --ink: #1a1a18;
+    --muted: #6b6b62;
+    --border: #d9d4c7;
+    --border2: #b8b2a4;
+    --hover: #f0ece2;
+    --green-bg: #eaf3de; --green-tx: #3b6d11; --green-bd: #c0dd97;
+    --amber-bg: #faeeda; --amber-tx: #854f0b; --amber-bd: #fac775;
+    --blue-bg:  #e6f1fb; --blue-tx:  #185fa5; --blue-bd:  #b5d4f4;
+    --purp-bg:  #eeedfe; --purp-tx:  #533ab7; --purp-bd:  #afa9ec;
+    --red-bg:   #fcebeb; --red-tx:   #a32d2d; --red-bd:   #f7c1c1;
+    --gray-bg:  #f0ece2; --gray-tx:  #6b6b62; --gray-bd:  #d9d4c7;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--ink); padding: 40px 24px; font-size: 14px; line-height: 1.5; }
+  h1 { font-size: 28px; font-weight: 600; letter-spacing: -0.4px; margin-bottom: 4px; }
+  .sub { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 12px; }
+  .hint { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--green-tx); background: var(--green-bg); border: 1px solid var(--green-bd); border-radius: 4px; padding: 4px 10px; margin-bottom: 28px; }
+  .page-header { max-width: 1200px; margin: 0 auto; border-bottom: 2px solid var(--ink); padding-bottom: 20px; margin-bottom: 28px; }
+  .legend { max-width: 1200px; margin: 0 auto 28px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 11px; color: var(--muted); }
+  .legend span { margin-right: 2px; }
+  .sec { max-width: 1200px; margin: 0 auto 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .sec-hdr { display: flex; gap: 14px; align-items: flex-start; padding: 16px 20px 14px 24px; background: #faf8f4; border-bottom: 1px solid var(--border); position: relative; }
+  .stripe { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; }
+  .num { font-size: 34px; font-weight: 600; color: var(--border2); line-height: 1; min-width: 34px; margin-top: 2px; }
+  .hdr-body { flex: 1; }
+  .sec-title { font-size: 17px; font-weight: 600; outline: none; border-radius: 3px; display: block; }
+  .sec-title:focus { background: #fffef8; padding: 1px 5px; margin: -1px -5px; outline: 2px solid var(--green-bd); }
+  .sec-desc { font-size: 12.5px; color: var(--muted); margin-top: 5px; outline: none; border-radius: 3px; display: block; line-height: 1.55; }
+  .sec-desc:focus { background: #fffef8; padding: 2px 5px; margin: -2px -5px; outline: 2px solid var(--green-bd); }
+  .sec-desc:empty::before { content: 'Add description…'; opacity: 0.45; font-style: italic; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); background: #f8f6f1; font-weight: 500; }
+  th.ca { width: 31%; } th.cm { width: 31%; } th.cr { width: 12%; text-align: center; }
+  th.cn { width: 20%; } th.cs { width: 6%; text-align: center; }
+  tbody tr { border-bottom: 1px solid var(--border); }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--hover); }
+  td { padding: 10px 14px; vertical-align: top; }
+  td.cr, td.cs { text-align: center; vertical-align: middle; }
+  .ce { outline: none; min-height: 16px; border-radius: 3px; word-break: break-word; font-size: 13.5px; line-height: 1.5; }
+  .ce:empty::before { content: attr(data-ph); opacity: 0.38; font-style: italic; pointer-events: none; }
+  .ce:focus { background: #fffef8; padding: 2px 5px; margin: -2px -5px; outline: 2px solid var(--green-bd); }
+  .badge { display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; border-radius: 4px; padding: 2px 8px; cursor: pointer; user-select: none; white-space: nowrap; border: 1px solid; transition: opacity .15s; }
+  .badge:hover { opacity: 0.72; }
+  .r-dir { background: var(--green-bg); color: var(--green-tx); border-color: var(--green-bd); }
+  .r-par { background: var(--amber-bg); color: var(--amber-tx); border-color: var(--amber-bd); }
+  .r-ind { background: var(--blue-bg);  color: var(--blue-tx);  border-color: var(--blue-bd); }
+  .r-out { background: var(--purp-bg);  color: var(--purp-tx);  border-color: var(--purp-bd); }
+  .r-no  { background: var(--red-bg);   color: var(--red-tx);   border-color: var(--red-bd); }
+  .r-em  { background: var(--gray-bg);  color: var(--gray-tx);  border-color: var(--gray-bd); }
+  .s-ok  { background: var(--green-bg); color: var(--green-tx); border-color: var(--green-bd); font-size: 13px; }
+  .s-no  { background: var(--red-bg);   color: var(--red-tx);   border-color: var(--red-bd);  font-size: 13px; }
+  .s-nu  { background: var(--gray-bg);  color: var(--gray-tx);  border-color: var(--gray-bd); font-size: 13px; }
+  .add-btn { width: 100%; background: none; border: none; border-top: 1px dashed var(--border); padding: 10px 14px; text-align: left; font-size: 11px; color: var(--muted); cursor: pointer; font-family: inherit; letter-spacing: 0.06em; text-transform: uppercase; }
+  .add-btn:hover { color: var(--green-tx); background: var(--green-bg); }
+  @media print { body { background: #fff; padding: 20px; } .hint, .add-btn { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="sub">Strategic Initiatives 2030 — Implementation Plan</div>
+  <h1>Strategic Actions &amp; Success Metrics Mapping</h1>
+  <div class="hint">✎ Click any cell to edit · Click coloured badges to cycle · + Add row for new entries</div>
+</div>
+
+<div class="legend">
+  <span>Match:</span>
+  <span class="badge r-dir">Direct</span>
+  <span class="badge r-par">Partial</span>
+  <span class="badge r-ind">Indirect</span>
+  <span class="badge r-out">Outcome only</span>
+  <span class="badge r-no">No match</span>
+  <span class="badge r-em">—</span>
+  &nbsp;
+  <span>Status:</span>
+  <span class="badge s-ok">✓</span>
+  <span class="badge s-no">✗</span>
+  <span class="badge s-nu">·</span>
+</div>
+
+<div id="app"></div>
+
+<script>
+const REL=[{k:'r-dir',l:'Direct'},{k:'r-par',l:'Partial'},{k:'r-ind',l:'Indirect'},{k:'r-out',l:'Outcome only'},{k:'r-no',l:'No match'},{k:'r-em',l:'—'}];
+const STA=[{k:'s-ok',l:'✓'},{k:'s-no',l:'✗'},{k:'s-nu',l:'·'}];
+const COLS=['#3b6d11','#185fa5','#854f0b','#533ab7','#0a4a5a','#444441'];
+const D=[
+  {t:"Teaching and Learning Excellence",
+   d:"Deliver an integrated program of innovative, research-informed teaching and learning practices that empower academic staff and students to reach their full potential. The program will balance a broad academic foundation with strategic depth in computer, physical, and business sciences, underpinned by creativity, digital fluency, and entrepreneurial thinking.",
+   rows:[
+    {a:"Establish a selective Honours Programme in selected disciplines (e.g., Physics, Computer Science) with early research engagement and a differentiated academic pathway to strengthen institutional reputation.",m:"At least 3 flagship Honours programmes established and operational.",r:'r-dir',s:'s-ok',n:""},
+    {a:"Integrate AI across all programmes through a foundational course and discipline-specific applications, while advancing research and innovation in AI-enabled teaching and learning.",m:"All programmes include a foundational AI course and discipline-specific AI applications.",r:'r-dir',s:'s-ok',n:""},
+    {a:"Foster innovative course design and practice through bi-annual reviews assessing relevance, contribution to student development, and alignment with CU's mission, research strengths, and societal impact.",m:"",r:'r-no',s:'s-no',n:""},
+    {a:"Embed early research and industry engagement as a defining feature of CU's teaching model enabling students from their first year to participate in real-world projects that build research literacy.",m:"All undergraduates engaged in research or industry projects by year 2.",r:'r-par',s:'s-ok',n:""},
+    {a:"Enhance the Constructor Track as a signature pathway integrating structured professional and personal development including communication, leadership, teamwork, ethics, entrepreneurship, venture creation, and research engagement.",m:"",r:'r-no',s:'s-no',n:""},
+    {a:"Adopt a data-informed approach to teaching improvement by implementing a comprehensive student feedback and learning analytics framework that drives continuous enhancement of teaching quality and learning outcomes.",m:"More than 85% overall student satisfaction with teaching quality.",r:'r-ind',s:'s-ok',n:""},
+    {a:"Encourage academic staff development and innovation through targeted support, peer collaboration, and recognition for excellence in teaching innovation and pedagogical leadership.",m:"More than 80% of faculty consistently meet or exceed internal teaching evaluation benchmarks.",r:'r-ind',s:'s-ok',n:""},
+    {a:"Leverage digital platforms and hybrid teaching models to enrich on- and off-campus learning through a strategic partnership with Constructor-Nexford (C>N). CU will design and govern academic content, and C>N will provide the scalable online infrastructure to deliver courses to a global audience.",m:"",r:'r-no',s:'s-no',n:""},
+    {a:"",m:"More than 90% of master's students participating in industry-linked research or internships.",r:'r-out',s:'s-nu',n:""},
+  ]},
+  {t:"Focussed Research and Innovation",
+   d:"Establish research clusters that achieve international recognition in areas of fundamental research aligned with the interests of the high-technology sector.",
+   rows:[
+    {a:"Form at least six high-impact research clusters that achieve international recognition in areas of fundamental and applied research aligned with high-technology sector priorities. These will be based on faculty expertise, funding potential, ecosystem alignment, and capacity for excellence, differentiation, and societal impact.",m:"Develop six research clusters with around five key researchers in each cluster.",r:'r-dir',s:'s-ok',n:""},
+    {a:"Implement a targeted recruitment and retention strategy to attract globally recognised researchers to anchor each cluster, incorporating explicit diversity goals and inclusive search practices.",m:"",r:'r-no',s:'s-no',n:""},
+    {a:"Target research collaboration and funding through projects such as Horizon Europe, DAAD, and other international programmes to expand doctoral education, improve research output, and elevate CU's global research standing.",m:"",r:'r-no',s:'s-no',n:""},
+    {a:"Conduct annual assessments of the commercial and societal impact of each research cluster, including patents, licences, spin-offs, and partnerships with industry and government.",m:"",r:'r-no',s:'s-no',n:""},
+    {a:"",m:"Achieve top 200 subject rankings in Physics and Computer Science within 5 years.",r:'r-out',s:'s-nu',n:""},
+    {a:"",m:"Publish research in more than 30 top level publications such as Nature, Science and top 10% of journals in the relevant field by impact factor each year.",r:'r-out',s:'s-nu',n:""},
+    {a:"",m:"Achieve doctoral student enrolment and completion rates in line with universities in the top 200 of the THE ranking.",r:'r-out',s:'s-nu',n:""},
+  ]},
+  {t:"Industry Collaboration and Entrepreneurship",
+   d:"Leverage the ecosystem resources of Constructor Tech and Constructor Capital, for example Acronis and JetBrains, and establish targeted collaborations with the high-tech sector to ensure the relevance of research, enhance R&D capabilities, and develop entrepreneurial ventures.",
+   rows:[
+    {a:"Develop close relationships with high-tech industry, for example in the automotive, aerospace, biotech, renewable energy, and advanced manufacturing sectors, through research alignment, joint laboratories and dual appointments.",m:"10 new joint labs with tech companies.",r:'r-dir',s:'s-ok',n:""},
+    {a:"Develop close relationships with high-tech industry through research alignment, joint laboratories and dual appointments.",m:"More than 90% faculty participation in industry-supported, industry-engaged or collaborative research.",r:'r-ind',s:'s-ok',n:""},
+    {a:"Build on our start-up accelerator to strengthen student competencies and foster an institutional culture that prioritises entrepreneurial engagement.",m:"20 pre-seed teams supported annually.",r:'r-dir',s:'s-ok',n:""},
+    {a:"Build on our start-up accelerator to strengthen student competencies and foster an institutional culture that prioritises entrepreneurial engagement.",m:"3 start-ups launched annually.",r:'r-dir',s:'s-ok',n:""},
+  ]},
+  {t:"Global Talent Development and Engagement",
+   d:"Attract, develop, and engage talented students from around the world by developing a rich and engaging community life integrated with high-quality academic programs and embedded research. Tailored support services and an environment where all students and staff feel safe, respected, and empowered to thrive will foster belonging and an enduring connection to the University.",
+   rows:[
+    {a:"Optimise global pipeline programs including scholarships, talent competitions, Olympiads, summer and online programs, and strategic school partnerships, with a particular emphasis on early identification of talented students in the Asia-Pacific, Middle East, and Latin American regions.",m:"More than 20% of CU's annual enrolment sourced from early-identification programs.",r:'r-dir',s:'s-ok',n:""},
+    {a:"Strengthen alumni and industry networks to ensure long-term connection and engagement, support the mentoring and employment of students, and support for their further integration.",m:"More than 50 active alumni mentors per year.",r:'r-dir',s:'s-ok',n:""},
+    {a:"Develop a comprehensive student support framework, including accessible peer counselling, and proactive wellbeing initiatives.",m:"More than 85% of students satisfied or very satisfied with wellbeing in annual satisfaction survey.",r:'r-dir',s:'s-ok',n:""},
+    {a:"Strengthen advising and career services to address the diverse needs of international students, first-generation learners, and underrepresented groups.",m:"100% of students have access to individualized career mentoring.",r:'r-dir',s:'s-ok',n:""},
+    {a:"Build student experience as a key differentiator through a structured campus curriculum, vibrant social spaces and activities, and a holistic \"college life\" model, supported by strategic partnerships for food and social services.",m:"High participation rates in extracurricular, cultural, and community initiatives.",r:'r-ind',s:'s-ok',n:""},
+    {a:"",m:"Enrolment of 5,000 on-campus students.",r:'r-out',s:'s-nu',n:""},
+    {a:"",m:"More than 90% first-to-second year retention rate.",r:'r-out',s:'s-nu',n:""},
+    {a:"",m:"More than 85% of graduates employed in Europe or enrolled in advanced study within 6 months.",r:'r-out',s:'s-nu',n:""},
+  ]},
+  {t:"Act as a Gateway for Local and Global Science and Research",
+   d:"Position CU as a connector and facilitator between the global research ecosystem and the regional innovation landscape in Bremen. Ensure that CU serves as both a local anchor and an international gateway linking researchers, scientists, and students with leading programs, institutions, and funding opportunities at regional, national, and European levels.",
+   rows:[
+    {a:"Facilitate researcher and scientist connections through CU's campus with institutions and programs of the European Union (e.g., Horizon Europe, Erasmus+, European Innovation Council, and maritime and space research initiatives).",m:"",r:'r-no',s:'s-no',n:""},
+    {a:"Build partnerships with German public and public-private institutions such as the Deutsche Forschungsgemeinschaft, Deutsches Forschungszentrum für Künstliche Intelligenz, and Alfred-Wegener-Institut.",m:"Strong institutional ties at both executive and operational levels with major institutions.",r:'r-ind',s:'s-ok',n:""},
+    {a:"Establish structured networks between CU and leading German research associations and institutes, including the Max Planck Society, Helmholtz Association, and Fraunhofer Society.",m:"A reliable network established with key public stakeholders at EU, federal, and Bremen state levels, including related research and science entities.",r:'r-ind',s:'s-ok',n:""},
+    {a:"Enable CU researchers and students to participate in industry-led public–private research projects, including automotive, aerospace, and other high-technology sectors.",m:"More than 3 government-led public–private projects involving CU participation by 2030.",r:'r-dir',s:'s-ok',n:""},
+    {a:"Enable CU researchers and students to participate in industry-led public–private research projects.",m:"More than 10 public sector–led research and science projects involving CU participation by 2030.",r:'r-dir',s:'s-ok',n:""},
+    {a:"Actively participate in state and regional higher education and innovation planning processes to ensure that CU's research clusters and graduate development contribute to Bremen's economic and innovation strategies.",m:"",r:'r-no',s:'s-no',n:""},
+  ]},
+  {t:"Economic Sustainability supported by Digital Transformation",
+   d:"Reinforce financial sustainability by reducing costs, improving efficiency, building the capacity for investment, and strengthening competitiveness. This will be supported by automation of administrative and academic processes.",
+   rows:[
+    {a:"Enhance digital integration by connecting platforms and prioritizing a seamless digital experience for students, faculty, and researchers, supported by dedicated coordination.",m:"100% paperless, digital processing of all university operations.",r:'r-dir',s:'s-ok',n:""},
+    {a:"Utilise Constructor Tech software to fully digitalize administrative processes, and streamline academic and administrative workflows.",m:"100% paperless, digital processing of all university operations.",r:'r-dir',s:'s-ok',n:""},
+    {a:"Implement comprehensive performance metrics evaluating contribution to excellence.",m:"Implementation of performance measurement across all departments.",r:'r-dir',s:'s-ok',n:""},
+    {a:"Diversify learner pathways with hybrid learners and executive education to complement the on-campus student population.",m:"Achieve a total student population of 10,000 on-campus and remote learners by 2030.",r:'r-dir',s:'s-ok',n:""},
+    {a:"Develop and implement an endowment growth strategy to establish 100 million Euro investments by 2027 rising to 500 million Euro by 2030.",m:"Achieve €500 million assets under management.",r:'r-dir',s:'s-ok',n:""},
+    {a:"Develop a long-term campus master plan aligned with projected student growth and research cluster requirements.",m:"Achieve objective of more than 25 new buildings as defined in the building master plan.",r:'r-dir',s:'s-ok',n:""},
+    {a:"",m:"Year-on-year improvement in staff-to-faculty ratio.",r:'r-out',s:'s-nu',n:""},
+    {a:"",m:"Year-on-year revenue growth with increasing efficiency of cost-revenue ratios, annual third-party audits and public transparency reports.",r:'r-out',s:'s-nu',n:""},
+    {a:"",m:"Year-on-year growth in endowment and donor contributions.",r:'r-out',s:'s-nu',n:""},
+  ]},
+];
+
+function cyc(arr,cur){const i=arr.findIndex(x=>x.k===cur);return arr[(i+1)%arr.length];}
+
+function mkBadge(arr,obj,field){
+  const cur=arr.find(x=>x.k===obj[field])||arr[0];
+  const el=document.createElement('span');
+  el.className='badge '+cur.k; el.textContent=cur.l;
+  el.onclick=()=>{const n=cyc(arr,obj[field]);obj[field]=n.k;el.className='badge '+n.k;el.textContent=n.l;};
+  return el;
+}
+
+function mkCell(txt,ph){
+  const d=document.createElement('div');
+  d.className='ce'; d.contentEditable='true'; d.setAttribute('data-ph',ph||'');
+  if(txt) d.textContent=txt;
+  return d;
+}
+
+function mkRow(obj){
+  const tr=document.createElement('tr');
+  const ta=document.createElement('td'); ta.className='ca'; ta.appendChild(mkCell(obj.a,'Strategic action…')); tr.appendChild(ta);
+  const tm=document.createElement('td'); tm.className='cm'; tm.appendChild(mkCell(obj.m,'Success metric…')); tr.appendChild(tm);
+  const tr2=document.createElement('td'); tr2.className='cr'; tr2.appendChild(mkBadge(REL,obj,'r')); tr.appendChild(tr2);
+  const tn=document.createElement('td'); tn.className='cn'; tn.appendChild(mkCell(obj.n,'Notes…')); tr.appendChild(tn);
+  const ts=document.createElement('td'); ts.className='cs'; ts.appendChild(mkBadge(STA,obj,'s')); tr.appendChild(ts);
+  return tr;
+}
+
+function mkSection(sec,idx){
+  const div=document.createElement('div'); div.className='sec';
+  const hdr=document.createElement('div'); hdr.className='sec-hdr';
+  const stripe=document.createElement('div'); stripe.className='stripe'; stripe.style.background=COLS[idx%COLS.length]; hdr.appendChild(stripe);
+  const num=document.createElement('div'); num.className='num'; num.textContent=idx+1; hdr.appendChild(num);
+  const body=document.createElement('div'); body.className='hdr-body';
+  const ti=document.createElement('div'); ti.className='sec-title'; ti.contentEditable='true'; ti.textContent=sec.t; body.appendChild(ti);
+  const de=document.createElement('div'); de.className='sec-desc'; de.contentEditable='true'; de.textContent=sec.d; body.appendChild(de);
+  hdr.appendChild(body); div.appendChild(hdr);
+  const tbl=document.createElement('table');
+  const thead=document.createElement('thead');
+  thead.innerHTML='<tr><th class="ca">Strategic action</th><th class="cm">Success metric</th><th class="cr">Match</th><th class="cn">Notes</th><th class="cs">Status</th></tr>';
+  tbl.appendChild(thead);
+  const tbody=document.createElement('tbody');
+  sec.rows.forEach(r=>tbody.appendChild(mkRow(r)));
+  tbl.appendChild(tbody); div.appendChild(tbl);
+  const btn=document.createElement('button'); btn.className='add-btn'; btn.textContent='+ Add row';
+  btn.onclick=()=>{const nr={a:'',m:'',r:'r-em',s:'s-nu',n:''};sec.rows.push(nr);tbody.appendChild(mkRow(nr));};
+  div.appendChild(btn);
+  return div;
+}
+
+const app=document.getElementById('app');
+D.forEach((s,i)=>app.appendChild(mkSection(s,i)));
+</script>
+</body>
+</html>
